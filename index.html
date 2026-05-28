@@ -26,7 +26,7 @@
   .price-group-label { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--navy-mid); padding-bottom: 6px; border-bottom: 1px solid var(--gray-200); margin-bottom: 8px; }
   .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 6px; }
   .field label { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gray-600); }
-  input[type="text"], input[type="date"], input[type="password"] { border: 1px solid var(--gray-200); border-radius: 3px; padding: 8px 11px; font-size: 14px; font-family: 'Source Sans 3', sans-serif; color: var(--text); background: var(--white); width: 100%; transition: border-color 0.15s; }
+  input[type="text"], input[type="date"] { border: 1px solid var(--gray-200); border-radius: 3px; padding: 8px 11px; font-size: 14px; font-family: 'Source Sans 3', sans-serif; color: var(--text); background: var(--white); width: 100%; transition: border-color 0.15s; }
   input:focus { outline: none; border-color: var(--navy); }
   input::placeholder { color: var(--gray-400); }
   .btn-generate { width: 100%; background: var(--navy); color: #fff; border: none; border-radius: 3px; padding: 14px; font-size: 15px; font-family: 'Source Sans 3', sans-serif; font-weight: 600; letter-spacing: 0.05em; cursor: pointer; transition: background 0.2s; margin-top: 4px; }
@@ -66,7 +66,7 @@
   #clipsOutput .article-title a:hover { text-decoration: underline; }
   #clipsOutput .article-meta { font-size: 11px; color: #888; margin: 3px 0 5px; font-style: italic; }
   #clipsOutput .article-snippet { font-size: 12px; color: #333; line-height: 1.65; }
-  #clipsOutput .article-snippet b { color: #0f1f38; }
+  #clipsOutput .article-snippet b { color: #0f1f38; font-weight: 700; }
   #clipsOutput .empty-note { font-size: 13px; color: #999; font-style: italic; }
   .footer { text-align: center; font-size: 11px; color: var(--gray-400); margin-top: 36px; padding-top: 18px; border-top: 1px solid var(--gray-200); }
   @media (max-width: 600px) { .price-grid { grid-template-columns: 1fr 1fr; } .main { padding: 20px 16px 40px; } .masthead-inner { flex-direction: column; align-items: flex-start; gap: 10px; } }
@@ -80,7 +80,7 @@
       <div class="masthead-title">AXPC Morning Clips</div>
       <div class="masthead-sub">American Exploration &amp; Production Council — Daily Media Digest</div>
     </div>
-    <div class="masthead-badge">AI-Powered</div>
+    <div class="masthead-badge">Approved Sources Only</div>
   </div>
 </div>
 
@@ -139,19 +139,9 @@
 </div>
 
 <script>
-// ── CONFIG ──────────────────────────────────────────────────────────────────
-const ANTHROPIC_KEY = "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";
-
-const APPROVED_SITES = [
-  "wsj.com","tulsaworld.com","denverpost.com","bismarcktribune.com",
-  "post-gazette.com","inquirer.com","politico.com","bloomberg.com",
-  "reuters.com","apnews.com","usatoday.com","ft.com","eenews.net",
-  "foxnews.com","cbsnews.com","abcnews.go.com","nbcnews.com","msnbc.com",
-  "cnn.com","oklahoman.com","nypost.com","nytimes.com",
-  "washingtonexaminer.com","washingtonpost.com"
-];
-
-const SITE_FILTER = APPROVED_SITES.map(s => `site:${s}`).join(" OR ");
+// ── CONFIG ───────────────────────────────────────────────────────────────
+const API_KEY = "AIzaSyC1E8OR65jfi4vZDDxiLAJAsttpPyYpvTY";
+const CX      = "c03bcfb2748264690";
 
 const MEMBERS = [
   "Antero Resources","Apache Corp","Ascent Resources","BKV",
@@ -164,26 +154,38 @@ const MEMBERS = [
   "SM Energy","TG Natural Resources"
 ];
 
-// ── INIT ────────────────────────────────────────────────────────────────────
+const SOURCE_NAMES = {
+  "wsj.com":"The Wall Street Journal","bloomberg.com":"Bloomberg",
+  "reuters.com":"Reuters","nytimes.com":"The New York Times",
+  "washingtonpost.com":"The Washington Post","politico.com":"Politico",
+  "eenews.net":"E&E News","foxnews.com":"Fox News","cnn.com":"CNN",
+  "cbsnews.com":"CBS News","nbcnews.com":"NBC News","apnews.com":"AP News",
+  "ft.com":"Financial Times","usatoday.com":"USA Today",
+  "nypost.com":"New York Post","washingtonexaminer.com":"Washington Examiner",
+  "msnbc.com":"MSNBC","inquirer.com":"The Philadelphia Inquirer",
+  "denverpost.com":"The Denver Post","tulsaworld.com":"Tulsa World",
+  "abcnews.go.com":"ABC News","post-gazette.com":"Pittsburgh Post-Gazette",
+  "bismarcktribune.com":"Bismarck Tribune","oklahoman.com":"The Oklahoman"
+};
+
+// ── INIT ─────────────────────────────────────────────────────────────────
 document.getElementById('clipsDate').value = new Date().toISOString().split('T')[0];
 
-// ── HELPERS ─────────────────────────────────────────────────────────────────
+// ── HELPERS ──────────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
-function setStep(n, s) { $('s'+n).className = 'step-pill '+s; }
-function setProgress(p) { $('progressBar').style.width = p+'%'; }
-function setStatus(msg, cls) { const e = $('statusMsg'); e.textContent = msg; e.className = 'status-msg '+(cls||''); }
-function escHtml(t) { return (t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function setStep(n,s){ $('s'+n).className='step-pill '+s; }
+function setProgress(p){ $('progressBar').style.width=p+'%'; }
+function setStatus(msg,cls){ const e=$('statusMsg'); e.textContent=msg; e.className='status-msg '+(cls||''); }
+function escHtml(t){ return (t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-function isApprovedSource(url) {
+function getSourceName(url, dateShort) {
   try {
-    const host = new URL(url).hostname.replace(/^www\./,'');
-    return APPROVED_SITES.some(s => host === s || host.endsWith('.'+s));
-  } catch(e) { return false; }
-}
-
-function dedup(arr) {
-  const seen = new Set();
-  return arr.filter(a => { if (!a.url || seen.has(a.url)) return false; seen.add(a.url); return true; });
+    let host = new URL(url).hostname.replace(/^www\./,'');
+    // handle subdomains like apnews.com
+    const base = Object.keys(SOURCE_NAMES).find(k => host === k || host.endsWith('.'+k));
+    const name = base ? SOURCE_NAMES[base] : host;
+    return name + ', ' + dateShort;
+  } catch(e) { return dateShort; }
 }
 
 function findMembers(item) {
@@ -191,71 +193,42 @@ function findMembers(item) {
   return MEMBERS.filter(m => text.includes(m.toLowerCase()));
 }
 
-function formatSource(url, dateShort) {
-  try {
-    const host = new URL(url).hostname.replace(/^www\./,'');
-    const names = {
-      'wsj.com':'The Wall Street Journal','bloomberg.com':'Bloomberg',
-      'reuters.com':'Reuters','nytimes.com':'The New York Times',
-      'washingtonpost.com':'The Washington Post','politico.com':'Politico',
-      'eenews.net':'E&E News','foxnews.com':'Fox News','cnn.com':'CNN',
-      'cbsnews.com':'CBS News','nbcnews.com':'NBC News','apnews.com':'AP News',
-      'ft.com':'Financial Times','usatoday.com':'USA Today',
-      'nypost.com':'New York Post','washingtonexaminer.com':'Washington Examiner',
-      'msnbc.com':'MSNBC','inquirer.com':'The Philadelphia Inquirer',
-      'denverpost.com':'The Denver Post','tulsaworld.com':'Tulsa World',
-      'abcnews.go.com':'ABC News','post-gazette.com':'Pittsburgh Post-Gazette',
-      'bismarcktribune.com':'Bismarck Tribune','oklahoman.com':'The Oklahoman'
-    };
-    const name = names[host] || host;
-    return `${name}, ${dateShort}`;
-  } catch(e) { return dateShort; }
+function dedup(arr) {
+  const seen = new Set();
+  return arr.filter(a => { if (!a.url||seen.has(a.url)) return false; seen.add(a.url); return true; });
 }
 
-// ── SINGLE API CALL WITH WEB SEARCH ─────────────────────────────────────────
-async function claudeSearch(searchQuery, systemPrompt) {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': ANTHROPIC_KEY,
-      'anthropic-version': '2023-06-01',
-      'anthropic-beta': 'web-search-2025-03-05'
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 4000,
-      system: systemPrompt,
-      tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-      messages: [{ role: 'user', content: searchQuery }]
-    })
-  });
+// ── GOOGLE PSE SEARCH ────────────────────────────────────────────────────
+// Google Custom Search API fully supports CORS from any origin — works in browsers
+async function pseSearch(query, num=10) {
+  const url = new URL('https://www.googleapis.com/customsearch/v1');
+  url.searchParams.set('key', API_KEY);
+  url.searchParams.set('cx',  CX);
+  url.searchParams.set('q',   query);
+  url.searchParams.set('num', String(Math.min(num,10)));
+  url.searchParams.set('dateRestrict', 'd1');  // past 24 hours only
+  url.searchParams.set('sort', 'date');
 
+  const res = await fetch(url.toString());
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error?.message || 'API error ' + res.status);
+    const err = await res.json().catch(()=>({}));
+    throw new Error(err.error?.message || 'Search error '+res.status);
   }
-
   const data = await res.json();
-  const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
-
-  // Extract JSON array from response
-  try {
-    const s = text.indexOf('['), e = text.lastIndexOf(']');
-    if (s >= 0 && e > s) return JSON.parse(text.slice(s, e+1));
-  } catch(err) {}
-  return [];
+  return (data.items || []).map(item => ({
+    title:   item.title || '',
+    url:     item.link  || '',
+    snippet: item.snippet || '',
+    displayLink: item.displayLink || ''
+  }));
 }
 
-// ── MAIN RUN ─────────────────────────────────────────────────────────────────
+// ── MAIN RUN ─────────────────────────────────────────────────────────────
 async function runClips() {
   const dateVal = $('clipsDate').value;
   const dateShort = dateVal
     ? new Date(dateVal+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})
     : new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
-  const dateStr = dateVal
-    ? new Date(dateVal+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})
-    : new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
 
   const prices = {
     wti:$('wti').value.trim(), wtiC:$('wtiC').value.trim(),
@@ -266,71 +239,70 @@ async function runClips() {
   $('generateBtn').disabled = true;
   $('outputWrap').className = 'output-wrap';
   $('progressWrap').className = 'progress-wrap show';
-  ['s1','s2','s3'].forEach(id => $(id).className = 'step-pill');
+  ['s1','s2','s3'].forEach(id=>$(id).className='step-pill');
   setProgress(0);
 
-  const SYSTEM = (section) => `You are a media researcher compiling morning news clips for AXPC (American Exploration & Production Council).
-
-Today is ${dateStr}. You must ONLY return articles from these approved sources: ${APPROVED_SITES.join(', ')}.
-
-Search for articles published in the PAST 24 HOURS ONLY. Do NOT include anything older.
-
-Return a JSON array only — no explanation, no markdown, no backticks. Each item:
-{"title":"headline","url":"full article url","snippet":"first 2-3 sentences of the article"}
-
-Section: ${section}. Maximum 10 results. Return [] if nothing found.`;
-
   try {
-    // STEP 1: AXPC mentions
-    setStep(1,'active'); setStatus('Searching AXPC mentions from the past 24 hours...');
-    const axpcRaw = await claudeSearch(
-      `Search these sources for articles from the past 24 hours mentioning "AXPC" OR "American Exploration and Production Council" OR "American Exploration & Production Council" OR "Anne Bradbury" OR "Parker Kasmer" OR "Tom Jorden" OR "Wendy Kirchoff" OR "Zach Gillan": ${SITE_FILTER}`,
-      SYSTEM('AXPC Mentions — direct mentions of AXPC org or named staff only')
+    // ── STEP 1: AXPC mentions ──────────────────────────────────────────
+    setStep(1,'active');
+    setStatus('Searching AXPC mentions...');
+
+    const axpcRaw = await pseSearch(
+      '"AXPC" OR "American Exploration and Production Council" OR "Anne Bradbury" OR "Parker Kasmer" OR "Tom Jorden" OR "Wendy Kirchoff" OR "Zach Gillan"'
     );
-    const axpc = dedup(axpcRaw.filter(a => isApprovedSource(a.url)));
+    const axpc = dedup(axpcRaw).map(a=>({...a, source: getSourceName(a.url, dateShort)}));
+
     setStep(1,'done'); setProgress(33);
 
-    // STEP 2: Member company news
-    setStep(2,'active'); setStatus('Searching member company news from the past 24 hours...');
-    const memberQ = MEMBERS.map(m=>`"${m}"`).join(' OR ');
-    const memberRaw = await claudeSearch(
-      `Search these sources for articles from the past 24 hours mentioning any of these companies: ${memberQ}. Sources: ${SITE_FILTER}`,
-      SYSTEM('Select Member News — articles mentioning AXPC member oil & gas companies')
-    );
+    // ── STEP 2: Member news — run 3 batches in parallel ────────────────
+    setStep(2,'active');
+    setStatus('Searching member company news...');
+
+    const b1 = MEMBERS.slice(0,10).map(m=>`"${m}"`).join(' OR ');
+    const b2 = MEMBERS.slice(10,20).map(m=>`"${m}"`).join(' OR ');
+    const b3 = MEMBERS.slice(20).map(m=>`"${m}"`).join(' OR ');
+
+    const [mb1,mb2,mb3] = await Promise.all([pseSearch(b1),pseSearch(b2),pseSearch(b3)]);
+
     const axpcUrls = new Set(axpc.map(a=>a.url));
-    const member = dedup(memberRaw.filter(a => isApprovedSource(a.url) && !axpcUrls.has(a.url)))
-      .map(a => ({ ...a, boldTerms: findMembers(a), source: formatSource(a.url, dateShort) }))
+    const member = dedup([...mb1,...mb2,...mb3])
+      .filter(a => !axpcUrls.has(a.url))
+      .map(a => ({...a, source: getSourceName(a.url,dateShort), boldTerms: findMembers(a)}))
       .filter(a => a.boldTerms.length > 0);
+
     setStep(2,'done'); setProgress(66);
 
-    // STEP 3: Industry news
-    setStep(3,'active'); setStatus('Searching industry news from the past 24 hours...');
-    const industryRaw = await claudeSearch(
-      `Search these sources for energy news articles from the past 24 hours about: oil prices, natural gas, LNG exports, American energy policy, fracking, methane emissions, upstream oil and gas, federal lands, permitting reform, energy security, climate legislation, crude oil exports, oil market. Sources: ${SITE_FILTER}`,
-      SYSTEM('Industry News — relevant energy, oil & gas, and policy news')
-    );
+    // ── STEP 3: Industry news — run 3 queries in parallel ──────────────
+    setStep(3,'active');
+    setStatus('Searching industry news...');
+
+    const [iq1,iq2,iq3] = await Promise.all([
+      pseSearch('"oil prices" OR "natural gas" OR "LNG exports" OR "crude oil" OR "oil market"'),
+      pseSearch('"energy policy" OR "fracking" OR "methane" OR "emissions" OR "federal lands" OR "permitting"'),
+      pseSearch('"American energy" OR "energy security" OR "upstream" OR "oil exports" OR "climate"')
+    ]);
+
     const memberUrls = new Set(member.map(a=>a.url));
-    const industry = dedup(industryRaw.filter(a => isApprovedSource(a.url) && !axpcUrls.has(a.url) && !memberUrls.has(a.url)))
-      .map(a => ({ ...a, source: formatSource(a.url, dateShort) }));
+    const industry = dedup([...iq1,...iq2,...iq3])
+      .filter(a => !axpcUrls.has(a.url) && !memberUrls.has(a.url))
+      .map(a => ({...a, source: getSourceName(a.url,dateShort)}));
+
     setStep(3,'done'); setProgress(100);
 
-    // Add source formatting to axpc too
-    const axpcFinal = axpc.map(a => ({ ...a, source: formatSource(a.url, dateShort) }));
-
-    renderOutput({ axpc: axpcFinal, member, industry }, dateShort, prices);
-    setStatus('Done! Copy to clipboard or print/save as PDF.', 'success');
+    renderOutput({axpc, member, industry}, dateShort, prices);
+    setStatus('Done! Copy to clipboard or print/save as PDF.','success');
     $('outputWrap').className = 'output-wrap show';
 
   } catch(err) {
-    setStatus('Error: ' + err.message, 'error');
+    setStatus('Error: '+err.message,'error');
     console.error(err);
   }
   $('generateBtn').disabled = false;
 }
 
-// ── RENDER ───────────────────────────────────────────────────────────────────
+// ── RENDER ────────────────────────────────────────────────────────────────
 function boldify(text, terms) {
-  if (!terms || !terms.length) return escHtml(text);
+  if (!terms||!terms.length) return escHtml(text);
   let s = escHtml(text);
   terms.forEach(t => {
     const re = new RegExp('('+t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi');
@@ -341,21 +313,21 @@ function boldify(text, terms) {
 
 function articleHtml(a, useBold) {
   return `<div class="article">
-    <div class="article-title"><a href="${escHtml(a.url||'#')}" target="_blank">${escHtml(a.title||'')}</a></div>
+    <div class="article-title"><a href="${escHtml(a.url)}" target="_blank">${escHtml(a.title)}</a></div>
     <div class="article-meta">${escHtml(a.source||'')}</div>
     <div class="article-snippet">${useBold ? boldify(a.snippet||'',a.boldTerms) : escHtml(a.snippet||'')}</div>
   </div>`;
 }
 
-function renderOutput({ axpc, member, industry }, dateShort, prices) {
+function renderOutput({axpc,member,industry}, dateShort, prices) {
   const ph = [
     prices.wti   ? `<div class="price-line"><span class="price-label">Oil (WTI):</span><span class="price-val">$${escHtml(prices.wti)}</span>${prices.wtiC?`<span class="price-chg">&nbsp;&nbsp;${escHtml(prices.wtiC)} (from previous close)</span>`:''}</div>` : '',
     prices.brent ? `<div class="price-line"><span class="price-label">Brent Crude:</span><span class="price-val">$${escHtml(prices.brent)}</span>${prices.brentC?`<span class="price-chg">&nbsp;&nbsp;${escHtml(prices.brentC)} (from previous close)</span>`:''}</div>` : '',
     prices.gas   ? `<div class="price-line"><span class="price-label">Natural Gas:</span><span class="price-val">$${escHtml(prices.gas)}</span>${prices.gasC?`<span class="price-chg">&nbsp;&nbsp;${escHtml(prices.gasC)} (from previous close)</span>`:''}</div>` : ''
   ].join('');
 
-  const sec = (arts, bold) => arts && arts.length
-    ? arts.map(a => articleHtml(a, bold)).join('')
+  const sec = (arts,bold) => arts&&arts.length
+    ? arts.map(a=>articleHtml(a,bold)).join('')
     : '<p class="empty-note">No articles found in the past 24 hours.</p>';
 
   $('clipsOutput').innerHTML = `
@@ -368,7 +340,7 @@ function renderOutput({ axpc, member, industry }, dateShort, prices) {
   `;
 }
 
-// ── COPY & PRINT ─────────────────────────────────────────────────────────────
+// ── COPY & PRINT ──────────────────────────────────────────────────────────
 function copyClips() {
   const el = $('clipsOutput');
   const range = document.createRange();
@@ -378,7 +350,7 @@ function copyClips() {
   document.execCommand('copy');
   sel.removeAllRanges();
   $('copyBtn').textContent = '✓ Copied!';
-  setTimeout(() => $('copyBtn').textContent = '⎘ Copy to Clipboard', 2000);
+  setTimeout(()=>$('copyBtn').textContent='⎘ Copy to Clipboard',2000);
 }
 
 function printClips() {
