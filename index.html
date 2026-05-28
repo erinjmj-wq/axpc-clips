@@ -17,7 +17,7 @@
   .masthead-inner { max-width: 860px; margin: 0 auto; padding: 24px 32px 20px; display: flex; align-items: flex-end; justify-content: space-between; }
   .masthead-title { font-family: 'Playfair Display', serif; font-size: 26px; color: #fff; }
   .masthead-sub { font-size: 11px; color: var(--gold-light); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 3px; font-weight: 300; }
-  .masthead-badge { font-size: 11px; color: var(--gold); border: 1px solid var(--gold); padding: 4px 10px; border-radius: 2px; letter-spacing: 0.06em; white-space: nowrap; }
+  .masthead-badge { font-size: 11px; color: var(--gold); border: 1px solid var(--gold); padding: 4px 10px; border-radius: 2px; white-space: nowrap; }
   .main { max-width: 860px; margin: 0 auto; padding: 32px 32px 60px; }
   .card { background: var(--white); border: 1px solid var(--gray-200); border-radius: 4px; padding: 22px 26px; margin-bottom: 18px; }
   .card-label { font-size: 10px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
@@ -29,7 +29,7 @@
   input[type="text"], input[type="date"] { border: 1px solid var(--gray-200); border-radius: 3px; padding: 8px 11px; font-size: 14px; font-family: 'Source Sans 3', sans-serif; color: var(--text); background: var(--white); width: 100%; transition: border-color 0.15s; }
   input:focus { outline: none; border-color: var(--navy); }
   input::placeholder { color: var(--gray-400); }
-  .btn-generate { width: 100%; background: var(--navy); color: #fff; border: none; border-radius: 3px; padding: 14px; font-size: 15px; font-family: 'Source Sans 3', sans-serif; font-weight: 600; letter-spacing: 0.05em; cursor: pointer; transition: background 0.2s; margin-top: 4px; }
+  .btn-generate { width: 100%; background: var(--navy); color: #fff; border: none; border-radius: 3px; padding: 14px; font-size: 15px; font-family: 'Source Sans 3', sans-serif; font-weight: 600; cursor: pointer; transition: background 0.2s; margin-top: 4px; }
   .btn-generate:hover:not(:disabled) { background: var(--navy-mid); }
   .btn-generate:disabled { opacity: 0.45; cursor: not-allowed; }
   .progress-wrap { display: none; margin-top: 18px; }
@@ -85,7 +85,6 @@
 </div>
 
 <div class="main">
-
   <div class="card">
     <div class="card-label">Clips Date</div>
     <div class="field" style="max-width:200px;">
@@ -135,31 +134,19 @@
     <div id="clipsOutput"></div>
   </div>
 
-  <div class="footer">AXPC Morning Clips Generator &nbsp;·&nbsp; Approved sources only &nbsp;·&nbsp; For internal use only</div>
+  <div class="footer">AXPC Morning Clips Generator &nbsp;·&nbsp; For internal use only</div>
 </div>
 
 <script>
-// ── CONFIG ───────────────────────────────────────────────────────────────────
 const PROXY = "https://axpcproxy.erin-jmj.workers.dev/";
 
-const APPROVED_SITES = [
+const APPROVED = [
   "wsj.com","tulsaworld.com","denverpost.com","bismarcktribune.com",
   "post-gazette.com","inquirer.com","politico.com","bloomberg.com",
   "reuters.com","apnews.com","usatoday.com","ft.com","eenews.net",
-  "foxnews.com","cbsnews.com","abcnews.go.com","nbcnews.com","msnbc.com",
+  "foxnews.com","cbsnews.com","go.com","nbcnews.com","msnbc.com",
   "cnn.com","oklahoman.com","nypost.com","nytimes.com",
   "washingtonexaminer.com","washingtonpost.com"
-];
-
-const MEMBERS = [
-  "Antero Resources","Apache Corp","Ascent Resources","BKV",
-  "California Resources Corporation","Caturus Energy","Chevron","Chord Energy",
-  "Civitas Resources","ConocoPhillips","Coterra","Crescent Point Energy",
-  "Devon Energy","Diamondback Energy","Diversified Energy","Expand Energy",
-  "EOG Resources","EQT Corp","Hilcorp Energy","Jonah Energy",
-  "Magnolia Oil & Gas","Mewbourne Oil","Northern Oil and Gas","Ovintiv",
-  "Permian Resources","PureWest Energy","Range Resources","Seneca Resources",
-  "SM Energy","TG Natural Resources"
 ];
 
 const SOURCE_NAMES = {
@@ -176,7 +163,17 @@ const SOURCE_NAMES = {
   'bismarcktribune.com':'Bismarck Tribune','oklahoman.com':'The Oklahoman'
 };
 
-// ── INIT ─────────────────────────────────────────────────────────────────────
+const MEMBERS = [
+  "Antero Resources","Apache Corp","Ascent Resources","BKV",
+  "California Resources Corporation","Caturus Energy","Chevron","Chord Energy",
+  "Civitas Resources","ConocoPhillips","Coterra","Crescent Point Energy",
+  "Devon Energy","Diamondback Energy","Diversified Energy","Expand Energy",
+  "EOG Resources","EQT Corp","Hilcorp Energy","Jonah Energy",
+  "Magnolia Oil & Gas","Mewbourne Oil","Northern Oil and Gas","Ovintiv",
+  "Permian Resources","PureWest Energy","Range Resources","Seneca Resources",
+  "SM Energy","TG Natural Resources"
+];
+
 document.getElementById('clipsDate').value = new Date().toISOString().split('T')[0];
 
 const $ = id => document.getElementById(id);
@@ -185,20 +182,19 @@ function setProgress(p){ $('progressBar').style.width=p+'%'; }
 function setStatus(msg,cls){ const e=$('statusMsg'); e.textContent=msg; e.className='status-msg '+(cls||''); }
 function escHtml(t){ return (t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-function getSource(url, dateShort) {
-  try {
-    const host = new URL(url).hostname.replace(/^www\./,'');
-    const k2 = host.split('.').slice(-2).join('.');
-    const k3 = host.split('.').slice(-3).join('.');
-    return (SOURCE_NAMES[k2] || SOURCE_NAMES[k3] || host) + ', ' + dateShort;
-  } catch(e){ return dateShort; }
-}
-
 function isApproved(url) {
   try {
     const host = new URL(url).hostname.replace(/^www\./,'');
-    return APPROVED_SITES.some(s => host === s || host.endsWith('.'+s));
+    return APPROVED.some(s => host === s || host.endsWith('.'+s));
   } catch(e){ return false; }
+}
+
+function getSource(url, ds) {
+  try {
+    const host = new URL(url).hostname.replace(/^www\./,'');
+    const k = host.split('.').slice(-2).join('.');
+    return (SOURCE_NAMES[k] || host) + ', ' + ds;
+  } catch(e){ return ds; }
 }
 
 function dedup(arr){
@@ -207,129 +203,114 @@ function dedup(arr){
 }
 
 function findMembers(item){
-  const text = ((item.title||'')+(item.snippet||'')).toLowerCase();
-  return MEMBERS.filter(m => text.includes(m.toLowerCase()));
+  const t = ((item.title||'')+(item.snippet||'')).toLowerCase();
+  return MEMBERS.filter(m=>t.includes(m.toLowerCase()));
 }
 
-// ── CALL PROXY ───────────────────────────────────────────────────────────────
-async function search(prompt) {
-  const res = await fetch(PROXY, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+async function callAI(userMsg) {
+  const r = await fetch(PROXY, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
     body: JSON.stringify({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 3000,
-      tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-      system: `You are a media researcher for AXPC (American Exploration & Production Council). Search ONLY these approved news sources: ${APPROVED_SITES.join(', ')}. Only return articles published in the past 24 hours. Return a raw JSON array only — no explanation, no markdown, no backticks. Each item: {"title":"...","url":"...","snippet":"first 2-3 sentences"}. Return [] if nothing found.`,
-      messages: [{ role: 'user', content: prompt }]
+      max_tokens: 4000,
+      tools: [{ type:'web_search_20250305', name:'web_search' }],
+      messages: [{ role:'user', content: userMsg }]
     })
   });
-
-  if (!res.ok) {
-    const err = await res.json().catch(()=>({}));
-    throw new Error(err.error?.message || 'Request failed: ' + res.status);
-  }
-
-  const data = await res.json();
-  const text = (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+  if (!r.ok) { const e=await r.json().catch(()=>({})); throw new Error(e.error?.message||'Error '+r.status); }
+  const d = await r.json();
+  // Extract all text blocks
+  const text = (d.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+  // Parse JSON array from response
   try {
-    const s = text.indexOf('['), e = text.lastIndexOf(']');
-    if (s >= 0 && e > s) return JSON.parse(text.slice(s, e+1));
+    const s=text.indexOf('['), e=text.lastIndexOf(']');
+    if(s>=0&&e>s) return JSON.parse(text.slice(s,e+1));
   } catch(e){}
   return [];
 }
 
-// ── MAIN ─────────────────────────────────────────────────────────────────────
 async function runClips() {
-  const dateVal = $('clipsDate').value;
-  const dateShort = dateVal
-    ? new Date(dateVal+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})
-    : new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
-  const dateStr = dateVal
-    ? new Date(dateVal+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})
-    : new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  const dv = $('clipsDate').value;
+  const ds = dv ? new Date(dv+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) : new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  const prices = { wti:$('wti').value.trim(), wtiC:$('wtiC').value.trim(), brent:$('brent').value.trim(), brentC:$('brentC').value.trim(), gas:$('gas').value.trim(), gasC:$('gasC').value.trim() };
 
-  const prices = {
-    wti:$('wti').value.trim(), wtiC:$('wtiC').value.trim(),
-    brent:$('brent').value.trim(), brentC:$('brentC').value.trim(),
-    gas:$('gas').value.trim(), gasC:$('gasC').value.trim()
-  };
-
-  $('generateBtn').disabled = true;
-  $('outputWrap').className = 'output-wrap';
-  $('progressWrap').className = 'progress-wrap show';
+  $('generateBtn').disabled=true;
+  $('outputWrap').className='output-wrap';
+  $('progressWrap').className='progress-wrap show';
   ['s1','s2','s3'].forEach(id=>$(id).className='step-pill');
   setProgress(0);
 
   try {
     // STEP 1: AXPC
-    setStep(1,'active'); setStatus('Searching AXPC mentions from the past 24 hours...');
-    const axpcRaw = await search(`Search for news articles from the past 24 hours (today is ${dateStr}) mentioning "AXPC" OR "American Exploration and Production Council" OR "American Exploration & Production Council" OR "Anne Bradbury" OR "Parker Kasmer" OR "Tom Jorden" OR "Wendy Kirchoff" OR "Zach Gillan". Only include results from approved sources published in the last 24 hours.`);
-    const axpc = dedup(axpcRaw.filter(a=>isApproved(a.url))).map(a=>({...a,source:getSource(a.url,dateShort)}));
+    setStep(1,'active'); setStatus('Searching AXPC mentions...');
+    const axpcRaw = await callAI(
+      `Search the web for recent news articles (from ${ds} or the past 48 hours) that mention "AXPC" OR "American Exploration and Production Council" OR "Anne Bradbury" OR "Parker Kasmer" OR "Tom Jorden" OR "Wendy Kirchoff" OR "Zach Gillan". Search across major news sites including wsj.com, reuters.com, bloomberg.com, politico.com, eenews.net, nytimes.com, washingtonpost.com, foxnews.com, cnn.com, cbsnews.com, apnews.com. Return a JSON array only, no explanation. Each item: {"title":"...","url":"...","snippet":"first 2-3 sentences of article"}. Return [] if nothing found.`
+    );
+    const axpc = dedup(axpcRaw).map(a=>({...a,source:getSource(a.url,ds)}));
     setStep(1,'done'); setProgress(33);
 
     // STEP 2: Member news
-    setStep(2,'active'); setStatus('Searching member company news from the past 24 hours...');
+    setStep(2,'active'); setStatus('Searching member company news...');
     const mq = MEMBERS.map(m=>`"${m}"`).join(' OR ');
-    const memberRaw = await search(`Search for news articles from the past 24 hours (today is ${dateStr}) mentioning any of these oil & gas companies: ${mq}. Only include results from approved sources published in the last 24 hours.`);
+    const memberRaw = await callAI(
+      `Search the web for recent news articles (from ${ds} or the past 48 hours) mentioning any of these oil and gas companies: ${mq}. Search across wsj.com, reuters.com, bloomberg.com, eenews.net, nytimes.com, washingtonpost.com, politico.com, foxnews.com, cnn.com, cbsnews.com, apnews.com, ft.com. Return a JSON array only, no explanation. Each item: {"title":"...","url":"...","snippet":"first 2-3 sentences"}. Up to 12 results. Return [] if nothing found.`
+    );
     const axpcUrls = new Set(axpc.map(a=>a.url));
-    const member = dedup(memberRaw.filter(a=>isApproved(a.url)&&!axpcUrls.has(a.url)))
-      .map(a=>({...a, source:getSource(a.url,dateShort), boldTerms:findMembers(a)}))
+    const member = dedup(memberRaw.filter(a=>!axpcUrls.has(a.url)))
+      .map(a=>({...a,source:getSource(a.url,ds),boldTerms:findMembers(a)}))
       .filter(a=>a.boldTerms.length>0);
     setStep(2,'done'); setProgress(66);
 
-    // STEP 3: Industry news
-    setStep(3,'active'); setStatus('Searching industry news from the past 24 hours...');
-    const industryRaw = await search(`Search for energy news articles from the past 24 hours (today is ${dateStr}) about: oil prices, natural gas, LNG exports, American energy policy, fracking, methane emissions, upstream oil and gas, federal lands, permitting reform, energy security, climate legislation, crude oil exports. Only include results from approved sources published in the last 24 hours.`);
+    // STEP 3: Industry
+    setStep(3,'active'); setStatus('Searching industry news...');
+    const indRaw = await callAI(
+      `Search the web for recent energy news articles (from ${ds} or the past 48 hours) about these topics: oil prices, natural gas prices, LNG exports, American energy policy, fracking, methane emissions, upstream oil and gas, federal lands, permitting reform, energy security, climate legislation, crude oil exports, Iran Strait of Hormuz. Search across wsj.com, reuters.com, bloomberg.com, eenews.net, nytimes.com, washingtonpost.com, politico.com, foxnews.com, cnn.com, cbsnews.com, apnews.com, ft.com. Return a JSON array only, no explanation. Each item: {"title":"...","url":"...","snippet":"first 2-3 sentences"}. Up to 12 results. Return [] if nothing found.`
+    );
     const memberUrls = new Set(member.map(a=>a.url));
-    const industry = dedup(industryRaw.filter(a=>isApproved(a.url)&&!axpcUrls.has(a.url)&&!memberUrls.has(a.url)))
-      .map(a=>({...a,source:getSource(a.url,dateShort)}));
+    const industry = dedup(indRaw.filter(a=>!axpcUrls.has(a.url)&&!memberUrls.has(a.url)))
+      .map(a=>({...a,source:getSource(a.url,ds)}));
     setStep(3,'done'); setProgress(100);
 
-    renderOutput({axpc,member,industry}, dateShort, prices);
+    renderOutput({axpc,member,industry},ds,prices);
     setStatus('Done! Copy to clipboard or print/save as PDF.','success');
-    $('outputWrap').className = 'output-wrap show';
+    $('outputWrap').className='output-wrap show';
 
   } catch(err) {
     setStatus('Error: '+err.message,'error');
     console.error(err);
   }
-  $('generateBtn').disabled = false;
+  $('generateBtn').disabled=false;
 }
 
-// ── RENDER ────────────────────────────────────────────────────────────────────
-function boldify(text, terms){
+function boldify(text,terms){
   if(!terms||!terms.length) return escHtml(text);
-  let s = escHtml(text);
+  let s=escHtml(text);
   terms.forEach(t=>{
-    const re = new RegExp('('+t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi');
-    s = s.replace(re,'<b>$1</b>');
+    const re=new RegExp('('+t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi');
+    s=s.replace(re,'<b>$1</b>');
   });
   return s;
 }
 
-function articleHtml(a, useBold){
+function articleHtml(a,bold){
   return `<div class="article">
     <div class="article-title"><a href="${escHtml(a.url)}" target="_blank">${escHtml(a.title)}</a></div>
     <div class="article-meta">${escHtml(a.source)}</div>
-    <div class="article-snippet">${useBold?boldify(a.snippet,a.boldTerms):escHtml(a.snippet)}</div>
+    <div class="article-snippet">${bold?boldify(a.snippet,a.boldTerms):escHtml(a.snippet)}</div>
   </div>`;
 }
 
-function renderOutput({axpc,member,industry}, dateShort, prices){
-  const ph = [
+function renderOutput({axpc,member,industry},ds,prices){
+  const ph=[
     prices.wti?`<div class="price-line"><span class="price-label">Oil (WTI):</span><span class="price-val">$${escHtml(prices.wti)}</span>${prices.wtiC?`<span class="price-chg">&nbsp;&nbsp;${escHtml(prices.wtiC)} (from previous close)</span>`:''}</div>`:'',
     prices.brent?`<div class="price-line"><span class="price-label">Brent Crude:</span><span class="price-val">$${escHtml(prices.brent)}</span>${prices.brentC?`<span class="price-chg">&nbsp;&nbsp;${escHtml(prices.brentC)} (from previous close)</span>`:''}</div>`:'',
     prices.gas?`<div class="price-line"><span class="price-label">Natural Gas:</span><span class="price-val">$${escHtml(prices.gas)}</span>${prices.gasC?`<span class="price-chg">&nbsp;&nbsp;${escHtml(prices.gasC)} (from previous close)</span>`:''}</div>`:''
   ].join('');
-
-  const sec = (arts,bold) => arts&&arts.length
-    ? arts.map(a=>articleHtml(a,bold)).join('')
-    : '<p class="empty-note">No articles found in the past 24 hours.</p>';
-
-  $('clipsOutput').innerHTML = `
+  const sec=(arts,b)=>arts&&arts.length?arts.map(a=>articleHtml(a,b)).join(''):'<p class="empty-note">No articles found.</p>';
+  $('clipsOutput').innerHTML=`
     <div class="clips-title">Daily News Clips</div>
-    <div class="clips-date">${escHtml(dateShort)}</div>
+    <div class="clips-date">${escHtml(ds)}</div>
     ${ph?`<hr class="section-divider"><div class="section-heading">Commodity Prices</div>${ph}`:''}
     <hr class="section-divider"><div class="section-heading">AXPC Mentions</div>${sec(axpc,false)}
     <hr class="section-divider"><div class="section-heading">Industry News</div>${sec(industry,false)}
@@ -338,19 +319,16 @@ function renderOutput({axpc,member,industry}, dateShort, prices){
 }
 
 function copyClips(){
-  const el = $('clipsOutput');
-  const range = document.createRange();
-  range.selectNodeContents(el);
-  const sel = window.getSelection();
-  sel.removeAllRanges(); sel.addRange(range);
-  document.execCommand('copy');
-  sel.removeAllRanges();
+  const el=$('clipsOutput');
+  const r=document.createRange(); r.selectNodeContents(el);
+  const s=window.getSelection(); s.removeAllRanges(); s.addRange(r);
+  document.execCommand('copy'); s.removeAllRanges();
   $('copyBtn').textContent='✓ Copied!';
   setTimeout(()=>$('copyBtn').textContent='⎘ Copy to Clipboard',2000);
 }
 
 function printClips(){
-  const w = window.open('','_blank');
+  const w=window.open('','_blank');
   w.document.write(`<!DOCTYPE html><html><head><title>AXPC Morning Clips</title><style>
     body{font-family:Arial,sans-serif;max-width:750px;margin:32px auto;font-size:12px;line-height:1.6;color:#222;}
     hr{border:none;border-top:2px solid #1F497D;margin:18px 0 10px;}
@@ -360,8 +338,7 @@ function printClips(){
     .article:last-child{border-bottom:none;}
     .article-title a{font-weight:700;color:#1155CC;text-decoration:none;}
     .article-meta{font-size:10px;color:#888;font-style:italic;margin:2px 0 4px;}
-    .article-snippet{font-size:11px;color:#333;}
-    b{color:#0f1f38;font-weight:700;}
+    .article-snippet{font-size:11px;color:#333;}b{color:#0f1f38;font-weight:700;}
     .price-label{font-weight:700;display:inline-block;min-width:120px;}
     .price-val{min-width:60px;display:inline-block;}
     .price-chg{font-style:italic;color:#555;}
